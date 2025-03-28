@@ -1,0 +1,14 @@
+{{- if .Values.modelStorage.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "discord-ai-bot.fullname" . }}-model-storage
+  labels:
+    {{- include "discord-ai-bot.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.modelStorage.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.modelStorage.size }}
+{{- end }}
