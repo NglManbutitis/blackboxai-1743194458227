@@ -1,0 +1,64 @@
+# Default values for discord-ai-bot
+replicaCount: 3
+
+image:
+  repository: yourusername/discord-ai-bot
+  tag: latest
+  pullPolicy: IfNotPresent
+
+bot:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  env:
+    DISCORD_TOKEN: ""
+    MODEL_API_URL: "http://{{ .Release.Name }}-api:8000/predict"
+
+api:
+  enabled: true
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+  service:
+    type: ClusterIP
+    port: 8000
+  env:
+    MODEL_PATH: "/app/model/checkpoints"
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+
+modelStorage:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 1Gi
+
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+    dashboard:
+      enabled: true
+
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths: []
+  tls: []
