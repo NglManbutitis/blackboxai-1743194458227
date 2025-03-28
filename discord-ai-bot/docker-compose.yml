@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=./model/checkpoints
+    volumes:
+      - ./model/checkpoints:/app/model/checkpoints
+    command: ["uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  bot:
+    build: .
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - MODEL_API_URL=http://api:8000/predict
+    command: ["python", "bot/main.py"]
+    restart: unless-stopped
+
+  training:
+    build: .
+    volumes:
+      - ./model/dataset:/app/model/dataset
+      - ./model/checkpoints:/app/model/checkpoints
+    command: ["python", "model/train.py"]
+    restart: on-failure
