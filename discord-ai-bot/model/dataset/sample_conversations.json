@@ -1,0 +1,42 @@
+[
+  {
+    "text": "Hello, how are you?",
+    "label": "greeting",
+    "response": "I'm doing well, thank you! How can I help you today?"
+  },
+  {
+    "text": "What's the weather like?",
+    "label": "weather_query",
+    "response": "I can check the weather for you. What location are you interested in?"
+  },
+  {
+    "text": "Tell me a joke",
+    "label": "entertainment",
+    "response": "Why don't scientists trust atoms? Because they make up everything!"
+  },
+  {
+    "text": "Goodbye",
+    "label": "farewell",
+    "response": "Goodbye! Have a great day!"
+  },
+  {
+    "text": "Help me with coding",
+    "label": "technical_support",
+    "response": "I'd be happy to help with coding. What programming language are you working with?"
+  },
+  {
+    "text": "What's your name?",
+    "label": "bot_info",
+    "response": "I'm an AI assistant created to help you. You can call me Nova!"
+  },
+  {
+    "text": "Thanks for your help",
+    "label": "appreciation",
+    "response": "You're welcome! I'm always happy to assist."
+  },
+  {
+    "text": "What can you do?",
+    "label": "capabilities",
+    "response": "I can answer questions, have conversations, and help with various topics. Try asking me anything!"
+  }
+]
