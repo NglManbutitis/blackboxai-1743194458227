@@ -1,0 +1,56 @@
+{
+  "title": "Discord Bot Monitoring",
+  "description": "Dashboard for monitoring Discord bot and AI model performance",
+  "panels": [
+    {
+      "title": "API Response Times",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(api_request_duration_seconds_sum[1m])/rate(api_request_duration_seconds_count[1m])",
+          "legendFormat": "{{method}} {{route}}"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "title": "Model Prediction Accuracy",
+      "type": "stat",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "sum(api_predictions_total{status=\"success\"}) / sum(api_predictions_total)",
+          "format": "percentunit"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 8}
+    },
+    {
+      "title": "Bot Message Activity",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(bot_messages_processed_total[1m])",
+          "legendFormat": "Messages"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "query": "label_values(service)"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  }
+}
