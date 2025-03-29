@@ -1,51 +1,61 @@
 import unittest
-from unittest.mock import AsyncMock, patch
-from bot.main import AIResponseHandler
-import aiohttp
-import json
+from unittest.mock import AsyncMock, MagicMock, patch
+from bot.main import bot
+from model.model_handler import model_handler
 
-class TestAIResponseHandler(unittest.IsolatedAsyncioTestCase):
-    async def test_successful_response(self):
-        handler = AIResponseHandler()
-        mock_response = AsyncMock()
-        mock_response.status = 200
-        mock_response.json.return_value = {"response": "Test response"}
+class TestBot(unittest.IsolatedAsyncioTestCase):
+    def setUp(self):
+        # Mock the bot's user
+        bot.user = MagicMock()
+        bot.user.id = 12345
+        bot.user.mentioned_in = MagicMock(return_value=True)
         
-        with patch('aiohttp.ClientSession.post', return_value=mock_response):
-            response = await handler.get_ai_response("test message")
-            self.assertEqual(response, "Test response")
+        # Initialize test knowledge
+        model_handler.knowledge = {
+            "greetings": {
+                "hello": "Hi there!",
+                "hi": "Hello!"
+            }
+        }
 
-    async def test_failed_response(self):
-        handler = AIResponseHandler()
-        mock_response = AsyncMock()
-        mock_response.status = 500
-        
-        with patch('aiohttp.ClientSession.post', return_value=mock_response):
-            response = await handler.get_ai_response("test message")
-            self.assertIsNone(response)
-
-    async def test_timeout_error(self):
-        handler = AIResponseHandler()
-        
-        with patch('aiohttp.ClientSession.post', side_effect=asyncio.TimeoutError):
-            response = await handler.get_ai_response("test message")
-            self.assertIsNone(response)
-
-class TestBotIntegration(unittest.IsolatedAsyncioTestCase):
-    @patch('bot.main.AIResponseHandler.get_ai_response')
-    async def test_bot_mention(self, mock_get_response):
-        mock_get_response.return_value = "Mocked response"
-        
-        # Setup test bot and message
-        bot = commands.Bot(command_prefix='!')
+    async def test_known_response(self):
+        # Test handling a known message
         message = AsyncMock()
-        message.author = bot.user
-        message.content = "@bot hello"
-        message.channel.type = discord.ChannelType.text
-        bot.user.mentioned_in = lambda msg: True
+        message.content = "hello"
+        message.author = MagicMock()
+        message.author.id = 54321  # Different from bot ID
+        message.channel = AsyncMock()
         
         await bot.on_message(message)
-        message.channel.send.assert_called_with("Mocked response")
+        message.channel.send.assert_called_with("Hi there!")
+
+    async def test_unknown_response(self):
+        # Test handling an unknown message
+        message = AsyncMock()
+        message.content = "unknown phrase"
+        message.author = MagicMock()
+        message.author.id = 54321
+        message.channel = AsyncMock()
+        
+        await bot.on_message(message)
+        message.channel.send.assert_called_with("I'm not sure about that. What should I have said? (Reply with '!learn [response]')")
+
+    async def test_learning(self):
+        # Test the learn command
+        ctx = AsyncMock()
+        ctx.message = AsyncMock()
+        ctx.message.reference = MagicMock()
+        ctx.message.reference.message_id = 1
+        ctx.channel = AsyncMock()
+        
+        # Mock the referenced message
+        referenced_msg = AsyncMock()
+        referenced_msg.content = "new phrase"
+        ctx.channel.fetch_message.return_value = referenced_msg
+        
+        await bot.get_command('learn').callback(ctx, response="new response")
+        self.assertEqual(model_handler.knowledge["responses"]["new phrase"], "new response")
+        ctx.send.assert_called_with("✅ Learned new response for: 'new phrase'")
 
 if __name__ == '__main__':
     unittest.main()
