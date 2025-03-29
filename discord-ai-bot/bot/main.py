@@ -1,15 +1,14 @@
 import discord
 from discord.ext import commands
-import aiohttp
 import logging
-import json
-from config import settings
-from typing import Optional
+from config import DISCORD_TOKEN, COMMAND_PREFIX, ADMIN_IDS
+from model.model_handler import model_handler
+from typing import Optional, Tuple
 
 # Initialize bot
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
 # Configure logging
 logging.basicConfig(
@@ -18,35 +17,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class AIResponseHandler:
-    def __init__(self):
-        self.session = aiohttp.ClientSession()
-        self.api_url = settings.MODEL_API_URL
-        self.timeout = settings.API_TIMEOUT
-        
-    async def get_ai_response(self, text: str) -> Optional[str]:
-        try:
-            payload = {
-                "text": text,
-                "user_id": "discord_user"
-            }
-            async with self.session.post(
-                self.api_url,
-                json=payload,
-                timeout=self.timeout
-            ) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data.get('response')
-                logger.error(f"API error: {response.status}")
-        except Exception as e:
-            logger.error(f"Request failed: {str(e)}")
-        return None
-
 @bot.event
 async def on_ready():
-    logger.info(f'Logged in as {bot.user.name}')
-    bot.ai_handler = AIResponseHandler()
+    logger.info(f'Logged in as {bot.user.name} (ID: {bot.user.id})')
+    logger.info(f'Loaded {model_handler.get_learning_stats()["total_phrases"]} phrases')
 
 @bot.event
 async def on_message(message):
@@ -56,21 +30,51 @@ async def on_message(message):
     # Process commands first
     await bot.process_commands(message)
     
-    # Get AI response for non-command messages
-    if bot.user.mentioned_in(message) or message.channel.type == discord.ChannelType.private:
-        response = await bot.ai_handler.get_ai_response(message.content)
-        if response:
-            await message.channel.send(response)
-        else:
-            await message.channel.send("I'm having trouble understanding. Could you rephrase that?")
+    # Handle AI responses
+    if bot.user.mentioned_in(message) or isinstance(message.channel, discord.DMChannel):
+        async with message.channel.typing():
+            response, confidence = model_handler.get_response(message.content)
+            
+            # Learn if response was low confidence
+            if confidence < 0.5:
+                await message.channel.send(f"I'm not sure about that. What should I have said? (Reply with '!learn [response]')")
+            else:
+                await message.channel.send(response)
+
+@bot.command(name='learn')
+async def learn_response(ctx, *, response: str):
+    """Teach the bot a new response"""
+    if not ctx.message.reference:
+        return await ctx.send("Please reply to a message to teach me!")
+    
+    # Get the original message that was replied to
+    try:
+        original_msg = await ctx.channel.fetch_message(ctx.message.reference.message_id)
+        model_handler.learn_phrase(original_msg.content, response)
+        await ctx.send(f"✅ Learned new response for: '{original_msg.content}'")
+    except Exception as e:
+        logger.error(f"Learning failed: {str(e)}")
+        await ctx.send("Failed to learn that. Please try again.")
+
+@bot.command(name='stats')
+async def show_stats(ctx):
+    """Show learning statistics"""
+    stats = model_handler.get_learning_stats()
+    embed = discord.Embed(
+        title="AI Knowledge Stats",
+        color=discord.Color.blue()
+    )
+    for category, count in stats['categories'].items():
+        embed.add_field(name=category.capitalize(), value=str(count), inline=True)
+    await ctx.send(embed=embed)
 
 @bot.command(name='train')
 @commands.is_owner()
 async def train_model(ctx):
-    """Trigger model retraining (owner only)"""
+    """Retrain the AI model (Owner only)"""
     await ctx.send("Starting model training...")
-    # Implementation would call your training API
+    # Future implementation would trigger training
     await ctx.send("Training complete!")
 
 if __name__ == '__main__':
-    bot.run(settings.DISCORD_TOKEN)
+    bot.run(DISCORD_TOKEN)
