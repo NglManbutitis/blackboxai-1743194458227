@@ -1,74 +1,91 @@
-# Discord AI Bot with Custom NLP Model
+# AI Discord Bot
 
-A Discord bot with custom-trained NLP capabilities for English conversations.
+A customizable AI chatbot for Discord that learns from conversations.
 
 ## Features
-- Custom-trained DistilBERT model for text understanding
-- FastAPI server for model inference
-- Discord bot interface with natural language responses
-- Configurable settings for model and bot behavior
 
-## Setup Instructions
+- 🧠 Learns from user interactions
+- 💬 Natural language understanding
+- 🤖 Discord integration
+- 📊 Learning statistics
+- 🔄 Continuous improvement
 
-### 1. Prerequisites
-- Python 3.9+
-- Discord Developer Account (for bot token)
-- NVIDIA GPU (recommended for training)
+## Setup
 
-### 2. Installation
+1. Install requirements:
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/discord-ai-bot.git
-cd discord-ai-bot
-
-# Install dependencies
-pip install -r requirements.txt
+chmod +x install.sh
+./install.sh
 ```
 
-### 3. Configuration
-1. Get your Discord bot token from [Discord Developer Portal](https://discord.com/developers/applications)
-2. Create `.env` file in project root:
-```env
-DISCORD_TOKEN=your_bot_token_here
+2. Edit `config.py`:
+```python
+DISCORD_TOKEN = 'your-bot-token-here'  # Get from Discord Developer Portal
 ```
 
-### 4. Training the Model
+3. Run the bot:
 ```bash
-python model/train.py
-```
-Note: Replace the sample dataset in `train.py` with your custom data
-
-### 5. Running the System
-```bash
-# Start the API server (in one terminal)
-python api/app.py
-
-# Start the Discord bot (in another terminal)
 python bot/main.py
 ```
 
-## Project Structure
+## Usage
+
+### Basic Interaction
+- Mention the bot or DM it to chat
+- The bot will respond based on its knowledge
+
+### Teaching the Bot
+Reply to a message with:
 ```
-discord-ai-bot/
-├── bot/                # Discord bot components
-│   ├── main.py         # Bot entry point
-├── model/              # NLP model components
-│   ├── train.py        # Model training script
-│   └── checkpoints/    # Saved model weights
-├── api/                # Model serving API
-│   └── app.py          # FastAPI server
-├── config/             # Configuration files
-│   └── settings.py     # Main settings
-└── requirements.txt    # Python dependencies
+!learn [response]
 ```
+Example:
+```
+User1: What's your favorite color?
+User2: !learn I like blue and green
+```
+
+### Commands
+- `!stats` - Show learning statistics
+- `!train` - Retrain the AI model (admin only)
 
 ## Customization
-- Edit `model/train.py` to use your own dataset
-- Modify `bot/main.py` to change bot behavior
-- Update `api/app.py` to change API endpoints
 
-## Deployment
-For production deployment:
-1. Host the API server on AWS/GCP/Azure
-2. Run the bot on a cloud VM or container
-3. Set up monitoring with Prometheus/Grafana
+### Knowledge Base
+Edit `model/knowledge.json` to add predefined responses:
+```json
+{
+  "greetings": {
+    "hi": "Hello!",
+    "hello": "Hi there!"
+  },
+  "questions": {
+    "how are you": "I'm doing well, thanks for asking!"
+  }
+}
+```
+
+### Training
+To manually retrain the model:
+```bash
+python model/train.py
+```
+
+## Requirements
+- Python 3.8+
+- Discord Bot Token
+- 4GB+ RAM (for BERT model)
+
+## Troubleshooting
+
+**Bot not responding:**
+- Check the bot has proper permissions
+- Verify the token in config.py is correct
+- Check logs for errors
+
+**Learning issues:**
+- Ensure you're replying with `!learn [response]`
+- Check knowledge.json has proper formatting
+
+## License
+MIT
